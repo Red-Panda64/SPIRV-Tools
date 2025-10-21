@@ -863,12 +863,12 @@ void InlinePass::InitializeInline() {
 InlinePass::InlinePass() {}
 
 void InlinePass::FixDebugDeclares(Function* func) {
-  std::map<uint32_t, Instruction*> access_chains;
+  std::map<uint32_t, Instruction*> variables;
   std::vector<Instruction*> debug_declare_insts;
 
   func->ForEachInst([&access_chains, &debug_declare_insts](Instruction* inst) {
-    if (inst->opcode() == spv::Op::OpAccessChain) {
-      access_chains[inst->result_id()] = inst;
+    if (inst->opcode() == spv::Op::OpVariable) {
+      variables[inst->result_id()] = inst;
     }
     if (inst->GetCommonDebugOpcode() == CommonDebugInfoDebugDeclare) {
       debug_declare_insts.push_back(inst);
@@ -876,15 +876,16 @@ void InlinePass::FixDebugDeclares(Function* func) {
   });
 
   for (auto& inst : debug_declare_insts) {
-    FixDebugDeclare(inst, access_chains);
+    FixDebugDeclare(inst, variables);
   }
 }
 
 void InlinePass::FixDebugDeclare(
     Instruction* dbg_declare_inst,
-    const std::map<uint32_t, Instruction*>& access_chains) {
-  if (access_chains.find(dbg_declare_inst->GetSingleWordOperand(kSpvDebugDeclareVarInIdx)) ==
-      access_chains.end())
+    const std::map<uint32_t, Instruction*>& variables) {
+  // DebugDeclare's Variable operand must refer to an OpVariable instruction
+  if (variables.find(dbg_declare_inst->GetSingleWordOperand(kSpvDebugDeclareVarInIdx)) !=
+      variables.end())
     return;
 
   // Change DebugDeclare to DebugValue.
