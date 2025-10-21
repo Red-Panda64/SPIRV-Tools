@@ -867,8 +867,14 @@ void InlinePass::FixDebugDeclares(Function* func) {
   std::vector<Instruction*> debug_declare_insts;
 
   func->ForEachInst([&access_chains, &debug_declare_insts](Instruction* inst) {
-    if (inst->opcode() == spv::Op::OpVariable) {
-      variables[inst->result_id()] = inst;
+    switch(inst->opcode()) {
+        case spv::Op::OpVariable:
+        case spv::Op::OpFunctionParameter:
+          variables[inst->result_id()] = inst;
+          break;
+        default:
+          break;
+
     }
     if (inst->GetCommonDebugOpcode() == CommonDebugInfoDebugDeclare) {
       debug_declare_insts.push_back(inst);
@@ -883,7 +889,7 @@ void InlinePass::FixDebugDeclares(Function* func) {
 void InlinePass::FixDebugDeclare(
     Instruction* dbg_declare_inst,
     const std::map<uint32_t, Instruction*>& variables) {
-  // DebugDeclare's Variable operand must refer to an OpVariable instruction
+  // DebugDeclare's Variable operand must refer to an OpVariable/OpFunctionParameter instruction
   if (variables.find(dbg_declare_inst->GetSingleWordOperand(kSpvDebugDeclareVarInIdx)) !=
       variables.end())
     return;
