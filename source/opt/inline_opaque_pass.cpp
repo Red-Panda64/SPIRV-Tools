@@ -30,6 +30,7 @@ bool InlineOpaquePass::IsOpaqueType(uint32_t typeId) {
     case spv::Op::OpTypeSampler:
     case spv::Op::OpTypeImage:
     case spv::Op::OpTypeSampledImage:
+    case spv::Op::OpTypeAccelerationStructureKHR:
       return true;
     case spv::Op::OpTypePointer:
       return IsOpaqueType(
